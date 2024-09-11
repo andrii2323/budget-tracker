@@ -62,3 +62,39 @@ def category_list(request):
     categories = Category.objects.filter(user=request.user)
     return render(request, 'transactions/category_list.html',
                   {'categories': categories})
+
+
+def home(request):
+    return render(request, 'transactions/home.html')
+
+
+@login_required
+def add_income(request):
+    if request.method == 'POST':
+        form = TransactionForm(request.POST)
+        if form.is_valid():
+            transaction = form.save(commit=False)
+            transaction.transaction_type = 'income'
+            transaction.user = request.user
+            transaction.save()
+            return redirect('home')
+    else:
+        form = TransactionForm()
+    return render(request, 'transactions/add_transaction.html',
+                  {'form': form, 'type': 'Income'})
+
+
+@login_required
+def add_expense(request):
+    if request.method == 'POST':
+        form = TransactionForm(request.POST)
+        if form.is_valid():
+            transaction = form.save(commit=False)
+            transaction.transaction_type = 'expense'
+            transaction.user = request.user
+            transaction.save()
+            return redirect('home')
+    else:
+        form = TransactionForm()
+    return render(request, 'transactions/add_transaction.html',
+                  {'form': form, 'type': 'Expense'})

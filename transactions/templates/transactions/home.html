@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Home</title>
+</head>
+<body>
+    <h1>Welcome to Budget Tracker</h1>
+
+    {% if user.is_authenticated %}
+        <p>Hello, {{ user.username }}!</p>
+        <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit">Log Out</button>
+        </form>
+    {% else %}
+        <a href="{% url 'login' %}">Login</a> |
+        <a href="{% url 'register' %}">Register</a>
+    {% endif %}
+
+    <a href="{% url 'add_income' %}">Add Income</a>
+    <a href="{% url 'add_expense' %}">Add Expense</a>
+<!--    <a href="{% url 'transaction_list' %}">View Transactions</a>-->
+<!--    <a href="{% url 'category_list' %}">View Categories</a>-->
+</body>
+</html>

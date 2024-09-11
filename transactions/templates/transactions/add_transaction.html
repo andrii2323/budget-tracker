@@ -1,14 +1,16 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Add Transaction</title>
+    <meta charset="UTF-8">
+    <title>Add {{ type }}</title>
 </head>
 <body>
-    <h1>Add Transaction</h1>
+    <h1>Add {{ type }}</h1>
     <form method="post">
         {% csrf_token %}
         {{ form.as_p }}
         <button type="submit">Save</button>
     </form>
+    <a href="{% url 'home' %}">Back to Home</a>
 </body>
 </html>
