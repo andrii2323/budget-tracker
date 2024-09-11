@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.db import models
 from .models import Transaction, Category, Note
 from .forms import TransactionForm, CategoryForm, NoteForm
 
@@ -65,7 +66,15 @@ def category_list(request):
 
 
 def home(request):
-    return render(request, 'transactions/home.html')
+    user = request.user
+    total_income = Transaction.objects.filter(user=user, transaction_type='income').aggregate(total=models.Sum('amount'))['total'] or 0
+    total_expense = Transaction.objects.filter(user=user, transaction_type='expense').aggregate(total=models.Sum('amount'))['total'] or 0
+    balance = total_income - total_expense
+
+    context = {
+        'balance': balance
+    }
+    return render(request, 'transactions/home.html', context)
 
 
 @login_required
