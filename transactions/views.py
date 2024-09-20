@@ -6,6 +6,7 @@ from django.db import models
 from .models import Transaction, Category, Note
 from .forms import TransactionForm, CategoryForm, NoteForm
 import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import io
@@ -74,8 +75,11 @@ def category_list(request):
 
 def home(request):
     user = request.user
-    total_income = Transaction.objects.filter(user=user, transaction_type='income').aggregate(total=models.Sum('amount'))['total'] or 0
-    total_expense = Transaction.objects.filter(user=user, transaction_type='expense').aggregate(total=models.Sum('amount'))['total'] or 0
+    total_income = \
+    Transaction.objects.filter(user=user, transaction_type='income').aggregate(total=models.Sum('amount'))['total'] or 0
+    total_expense = \
+    Transaction.objects.filter(user=user, transaction_type='expense').aggregate(total=models.Sum('amount'))[
+        'total'] or 0
     balance = total_income - total_expense
 
     context = {
@@ -129,17 +133,17 @@ def stats_view(request):
     transactions_year = Transaction.objects.filter(user=user, date__gte=year_ago)
 
     total_income_week = transactions_week.filter(transaction_type='income').aggregate(total=Sum('amount'))[
-                             'total'] or 0
+                            'total'] or 0
     total_expense_week = transactions_week.filter(transaction_type='expense').aggregate(total=Sum('amount'))[
                              'total'] or 0
 
     total_income_month = transactions_month.filter(transaction_type='income').aggregate(total=Sum('amount'))[
                              'total'] or 0
     total_expense_month = transactions_month.filter(transaction_type='expense').aggregate(total=Sum('amount'))[
-                             'total'] or 0
+                              'total'] or 0
 
     total_income_year = transactions_year.filter(transaction_type='income').aggregate(total=Sum('amount'))[
-                             'total'] or 0
+                            'total'] or 0
     total_expense_year = transactions_year.filter(transaction_type='expense').aggregate(total=Sum('amount'))[
                              'total'] or 0
 
@@ -169,9 +173,16 @@ def category_pie_chart(request):
             category_names.append(category.name)
             category_totals.append(total_expense)
 
+    if not category_totals:
+        return render(request, 'transactions/category_pie_chart.html', {'graphic': None})
+
+    total_expense = sum(category_totals)
+
     plt.figure(figsize=(6, 6))
-    plt.pie(category_totals, labels=category_names, autopct='%1.1f%%', startangle=90)
+    plt.pie(category_totals, labels=None, startangle=90, wedgeprops={'width': 0.3})
     plt.axis('equal')
+
+    plt.text(0, 0, f'Total:\n${total_expense}', ha='center', va='center', fontsize=12, fontweight='bold')
 
     buffer = io.BytesIO()
     plt.savefig(buffer, format='png')
@@ -181,7 +192,11 @@ def category_pie_chart(request):
 
     graphic = base64.b64encode(image_png).decode('utf-8')
 
-    return render(request, 'transactions/category_pie_chart.html', {'graphic': graphic})
+    percentages = [f"{category}: ${total} ({round((total / total_expense) * 100, 1)}%)"
+                   for category, total in zip(category_names, category_totals)]
+
+    return render(request, 'transactions/category_pie_chart.html', {'graphic': graphic,
+                                                                    'percentages': percentages})
 
 
 @login_required
@@ -197,12 +212,13 @@ def compare_periods(request):
     income_current_month = transactions_current_month.filter(transaction_type='income').aggregate(total=Sum('amount'))[
                                'total'] or 0
     expense_current_month = transactions_current_month.filter(transaction_type='expense').aggregate(total=Sum('amount')
-                                )['total'] or 0
+                                                                                                    )['total'] or 0
 
     income_previous_month = transactions_previous_month.filter(transaction_type='income').aggregate(total=Sum('amount')
-                                )['total'] or 0
+                                                                                                    )['total'] or 0
     expense_previous_month = transactions_previous_month.filter(transaction_type='expense').aggregate(total=Sum('amount'
-                                ))['total'] or 0
+                                                                                                                ))[
+                                 'total'] or 0
 
     context = {
         'income_current_month': income_current_month,
@@ -213,3 +229,42 @@ def compare_periods(request):
 
     return render(request, 'transactions/compare_periods.html', context)
 
+
+@login_required
+def income_pie_chart(request):
+    user = request.user
+    categories = Category.objects.filter(user=user)
+    category_names = []
+    category_totals = []
+
+    for category in categories:
+        total_income = Transaction.objects.filter(user=user, category=category, transaction_type='income').aggregate(
+            total=Sum('amount'))['total'] or 0
+        if total_income > 0:
+            category_names.append(category.name)
+            category_totals.append(total_income)
+
+    if not category_totals:
+        return render(request, 'transactions/income_pie_chart.html', {'graphic': None})
+
+    total_income = sum(category_totals)
+
+    plt.figure(figsize=(6, 6))
+    plt.pie(category_totals, labels=None, startangle=90, wedgeprops={'width': 0.3})
+    plt.axis('equal')
+
+    plt.text(0, 0, f'Total Income:\n${total_income}', ha='center', va='center', fontsize=12, fontweight='bold')
+
+    buffer = io.BytesIO()
+    plt.savefig(buffer, format='png')
+    buffer.seek(0)
+    image_png = buffer.getvalue()
+    buffer.close()
+
+    graphic = base64.b64encode(image_png).decode('utf-8')
+
+    percentages = [f"{category}: ${total} ({round((total / total_income) * 100, 1)}%)"
+                   for category, total in zip(category_names, category_totals)]
+
+    return render(request, 'transactions/income_pie_chart.html', {'graphic': graphic,
+                                                                  'percentages': percentages})
