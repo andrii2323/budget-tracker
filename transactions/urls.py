@@ -10,4 +10,7 @@ urlpatterns = [
     path('category_list/', views.category_list, name='category_list'),
     path('add_income/', views.add_income, name='add_income'),
     path('add_expense/', views.add_expense, name='add_expense'),
+    path('stats/', views.stats_view, name='stats'),
+    path('category_pie_chart/', views.category_pie_chart, name='category_pie_chart'),
+    path('compare_periods/', views.compare_periods, name='compare_periods'),
 ]
