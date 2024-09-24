@@ -14,5 +14,4 @@ urlpatterns = [
     path('category_pie_chart/', views.category_pie_chart, name='category_pie_chart'),
     path('compare_periods/', views.compare_periods, name='compare_periods'),
     path('income_pie_chart/', views.income_pie_chart, name='income_pie_chart'),
-
 ]

@@ -74,19 +74,27 @@ def category_list(request):
                   {'categories': categories})
 
 
+@login_required
 def home(request):
     user = request.user
-    if isinstance(user, AnonymousUser):
-        return redirect('login')
-
-    total_income = Transaction.objects.filter(user=user, transaction_type='income').aggregate(total=models.Sum('amount')
-                                                                                              )['total'] or 0
-    total_expense = Transaction.objects.filter(user=user, transaction_type='expense').aggregate(total=models.Sum(
-        'amount'))['total'] or 0
+    total_income = Transaction.objects.filter(user=user, transaction_type='income').aggregate(total=models.Sum('amount'))['total'] or 0
+    total_expense = Transaction.objects.filter(user=user, transaction_type='expense').aggregate(total=models.Sum('amount'))['total'] or 0
     balance = total_income - total_expense
 
+    # Останні транзакції (5 останніх)
+    transactions = Transaction.objects.filter(user=user).order_by('-date')[:5]
+
+    # Графік витрат
+    expense_chart = get_pie_chart(user, 'expense')
+
+    # Графік доходів
+    income_chart = get_pie_chart(user, 'income')
+
     context = {
-        'balance': balance
+        'balance': balance,
+        'transactions': transactions,
+        'expense_chart': expense_chart,
+        'income_chart': income_chart
     }
     return render(request, 'transactions/home.html', context)
 
@@ -271,3 +279,33 @@ def income_pie_chart(request):
 
     return render(request, 'transactions/income_pie_chart.html', {'graphic': graphic,
                                                                   'percentages': percentages})
+
+
+def get_pie_chart(user, transaction_type):
+    categories = Category.objects.filter(user=user)
+    category_names = []
+    category_totals = []
+
+    for category in categories:
+        total = Transaction.objects.filter(user=user, category=category, transaction_type=transaction_type).aggregate(
+            total=Sum('amount'))['total'] or 0
+        if total > 0:
+            category_names.append(category.name)
+            category_totals.append(total)
+
+    if not category_totals:
+        return None
+
+    total_sum = sum(category_totals)
+    plt.figure(figsize=(6, 6))
+    plt.pie(category_totals, labels=None, startangle=90, wedgeprops={'width': 0.3})
+    plt.axis('equal')
+    plt.text(0, 0, f'Total {transaction_type.capitalize()}: ${total_sum}', ha='center', va='center', fontsize=12, fontweight='bold')
+
+    buffer = io.BytesIO()
+    plt.savefig(buffer, format='png')
+    buffer.seek(0)
+    image_png = buffer.getvalue()
+    buffer.close()
+
+    return base64.b64encode(image_png).decode('utf-8')
