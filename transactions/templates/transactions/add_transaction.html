@@ -1,16 +1,31 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Add {{ type }}</title>
-</head>
-<body>
-    <h1>Add {{ type }}</h1>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Save</button>
-    </form>
-    <a href="{% url 'home' %}">Back to Home</a>
-</body>
-</html>
+{% extends 'transactions/base.html' %}
+
+{% block title %}
+    Add {{ type }} - Budget Tracker
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white py-3">
+                    <h3 class="mb-0">Add {{ type }}</h3>
+                </div>
+                <div class="card-body px-4 py-3">
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form.as_p }}
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg">Save</button>
+                        </div>
+                    </form>
+                    <div class="text-center mt-4">
+                        <a href="{% url 'home' %}" class="btn btn-outline-secondary btn-sm">Back to Home</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
